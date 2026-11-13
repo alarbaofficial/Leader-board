@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Leaderboard Seru & Lucu 🏆 - Google Sheets Sync</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-display: 'Fredoka', cursive, sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: radial-gradient(circle at top left, #fef9c3 0%, #ffedd5 35%, #e0e7ff 75%, #fae8ff 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-display {
+      font-family: var(--font-display);
+    }
+
+    /* Animasi Mengambang & Mahkota */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(-2deg); }
+      50% { transform: translateY(-7px) rotate(2deg); }
+    }
+
+    @keyframes crownWiggle {
+      0%, 100% { transform: rotate(-10deg) scale(1); }
+      50% { transform: rotate(10deg) scale(1.1); }
+    }
+
+    @keyframes pulseGlowGold {
+      0%, 100% { box-shadow: 0 0 25px rgba(250, 204, 21, 0.55), 0 12px 28px -8px rgba(234, 179, 8, 0.45); }
+      50% { box-shadow: 0 0 42px rgba(250, 204, 21, 0.9), 0 16px 35px -6px rgba(234, 179, 8, 0.7); }
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.82); opacity: 0; }
+      70% { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shakeComic {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-5px) rotate(-1deg); }
+      40% { transform: translateX(5px) rotate(1deg); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .animate-float {
+      animation: floatSlow 3.2s ease-in-out infinite;
+    }
+
+    .animate-crown {
+      animation: crownWiggle 2.2s ease-in-out infinite;
+    }
+
+    .glow-gold {
+      animation: pulseGlowGold 2.8s ease-in-out infinite;
+    }
+
+    .animate-pop {
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .animate-shake {
+      animation: shakeComic 0.4s ease-in-out;
+    }
+
+    .rank-card {
+      will-change: transform;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.35);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.6);
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+    }
+
+    .podium-step-1 {
+      background: linear-gradient(180deg, #fef08a 0%, #facc15 55%, #eab308 100%);
+    }
+    .podium-step-2 {
+      background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 60%, #94a3b8 100%);
+    }
+    .podium-step-3 {
+      background: linear-gradient(180deg, #fed7aa 0%, #fb923c 60%, #ea580c 100%);
+    }
+    .podium-step-honor {
+      background: linear-gradient(180deg, #e0e7ff 0%, #c7d2fe 55%, #a5b4fc 100%);
+    }
+  </style>
+</head>
+<body class="text-slate-800 selection:bg-amber-300 selection:text-slate-900">
+
+  <!-- Dekorasi Latar Mengambang -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-16 -left-16 w-72 h-72 bg-amber-300/30 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/3 -right-20 w-80 h-80 bg-indigo-400/25 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-1/3 w-96 h-96 bg-pink-300/25 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 py-6 md:py-8">
+
+    <!-- HEADER UTAMA -->
+    <header class="glass-panel rounded-3xl p-5 md:p-6 shadow-xl mb-6 flex flex-col lg:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4 text-center lg:text-left">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 flex items-center justify-center text-3xl shadow-lg shadow-orange-500/30 shrink-0 animate-float">
+          🏆
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 mb-1">
+            <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-500 text-white shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+              LIVE ARENA
+            </span>
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+              Podium Top 7
+            </span>
+            <span id="roleStatusBadge" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+              👁️ Layar Publik
+            </span>
+            <span id="sheetSyncBadge" class="inline-flex items-center gap-1.5 text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
+              <span id="sheetSyncDot" class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+              <span id="sheetSyncText">Menghubungkan Sheets...</span>
+            </span>
+          </div>
+          <h1 id="mainBoardTitle" class="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+            Klasemen Sultan Poin
+          </h1>
+          <p class="text-slate-500 text-xs sm:text-sm font-medium mt-0.5">
+            Tersinkronisasi otomatis dengan <span class="font-bold text-emerald-700">Google Spreadsheets</span> secara real-time!
+          </p>
+        </div>
+      </div>
+
+      <!-- Kontrol Publik & Tombol Otoritas Admin -->
+      <div class="flex flex-wrap items-center justify-center gap-2.5">
+        <button id="btnManualRefresh" title="Tarik data terbaru dari Google Sheets" class="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-sky-50 border-2 border-slate-200 font-bold text-xs sm:text-sm text-slate-700 shadow-sm transition active:scale-95 flex items-center gap-1.5">
+          <span id="refreshIcon">🔄</span>
+          <span class="hidden sm:inline">Refresh</span>
+        </button>
+
+        <button id="btnSound" title="Suara Efek Lucu" class="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 font-bold text-xs sm:text-sm text-slate-700 shadow-sm transition active:scale-95 flex items-center gap-1.5">
+          <span id="soundIcon">🔊</span>
+          <span id="soundLabel" class="hidden sm:inline">SFX On</span>
+        </button>
+
+        <!-- Tombol Login Admin (Saat Mode Publik) -->
+        <button id="btnOpenAdminLogin" class="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-lg shadow-slate-900/20 transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
+          <span>🔐</span>
+          <span>Masuk Admin</span>
+        </button>
+
+        <!-- Kontrol Cepat Admin (Saat Login Admin Aktif) -->
+        <div id="adminHeaderActions" class="hidden flex-wrap items-center gap-2">
+          <button id="btnAutoLive" class="px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/25 transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5">
+            <span id="autoLiveIcon">▶️</span>
+            <span id="autoLiveText">Simulasi Acak</span>
+          </button>
+
+          <button id="btnCopyPublicLink" class="px-3.5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/25 transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5">
+            <span>🔗</span>
+            <span>Salin Link Publik</span>
+          </button>
+
+          <button id="btnExitAdmin" title="Keluar ke Mode Publik" class="px-3.5 py-2.5 rounded-2xl bg-rose-100 hover:bg-rose-200 border-2 border-rose-200 text-rose-700 font-bold text-xs sm:text-sm transition active:scale-95 flex items-center gap-1.5">
+            <span>🚪</span>
+            <span>Keluar Admin</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- BANNER KOMENTATOR LUCU -->
+    <div id="commentaryBox" class="glass-panel rounded-2xl px-4 py-3 mb-7 shadow-md flex items-center justify-between gap-3 border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-white/90 to-indigo-50/90">
+      <div class="flex items-center gap-3 min-w-0">
+        <span id="commentaryEmoji" class="text-2xl shrink-0">🎙️</span>
+        <p id="commentaryText" class="text-sm sm:text-base font-bold text-slate-700 truncate">
+          Menyambungkan ke Google Sheets... Siap memantau perebutan takhta Top 7!
+        </p>
+      </div>
+      <span id="lastUpdateBadge" class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 shrink-0 hidden sm:inline-block">
+        Live Sync
+      </span>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- PODIUM KEHORMATAN 7 TERATAS (TOP 3 UTAMA + PILAR 4 - 7)   -->
+    <!-- ========================================================= -->
+    <section class="mb-8">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">👑</span>
+          <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-800">Podium Kehormatan 7 Teratas</h2>
+        </div>
+        <span class="text-xs font-extrabold text-indigo-700 bg-white/80 px-3 py-1 rounded-full border border-indigo-100 shadow-sm">
+          Top 3 Utama + Pilar Elite 4–7
+        </span>
+      </div>
+
+      <!-- BARIS 1: TOP 3 UTAMA (JUARA 2 - JUARA 1 - JUARA 3) -->
+      <div id="podiumTop3" class="grid grid-cols-3 gap-2.5 sm:gap-5 items-end max-w-4xl mx-auto pt-4 pb-2 px-1">
+        <!-- Diisi secara dinamis oleh JS -->
+      </div>
+
+      <!-- BARIS 2: PILAR KEHORMATAN PERINGKAT 4 - 7 -->
+      <div id="podiumTop4to7" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 items-end max-w-5xl mx-auto mt-4 pt-2 px-1">
+        <!-- Diisi secara dinamis oleh JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- LAYOUT UTAMA: DINAMIS ANTARA MODE PUBLIK VS MODE ADMIN     -->
+    <!-- ========================================================= -->
+    <div id="mainContentGrid" class="grid grid-cols-1 gap-6 items-start">
+
+      <!-- DAFTAR PERINGKAT LENGKAP (PERINGKAT 8 KE BAWAH + ALL VIEW) -->
+      <section id="leaderboardSection" class="glass-panel rounded-3xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b-2 border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📊</span>
+            <h2 class="font-display text-xl font-bold text-slate-800">Klasemen Penantang & Semua Peserta</h2>
+            <span id="totalPlayersBadge" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">0 Peserta</span>
+          </div>
+
+          <!-- Filter tampilan daftar -->
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+            <button id="filterFrom8" class="px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-indigo-700 shadow-sm transition">
+              Peringkat 8+
+            </button>
+            <button id="filterAll" class="px-3 py-1 rounded-lg text-xs font-extrabold text-slate-600 hover:text-slate-900 transition">
+              Semua (1–Akhir)
+            </button>
+          </div>
+        </div>
+
+        <div id="leaderboardList" class="space-y-2.5 relative">
+          <!-- Daftar kartu peserta dirender di sini -->
+        </div>
+
+        <div id="emptyState" class="hidden text-center py-10">
+          <div class="text-5xl mb-2">🦗</div>
+          <p class="font-display text-lg font-bold text-slate-600">Arena Penantang Masih Sepi!</p>
+          <p class="text-xs text-slate-400">Semua peserta saat ini sedang duduk manis di Podium 7 Teratas.</p>
+        </div>
+      </section>
+
+      <!-- PANEL OTORITAS ADMIN (TERSEMBUNYI DI LAYAR PUBLIK) -->
+      <aside id="adminSidebarPanel" class="hidden lg:col-span-5 space-y-5">
+
+        <!-- Status Koneksi & Pengaturan Papan -->
+        <div class="glass-panel rounded-3xl p-5 shadow-xl border-indigo-200 bg-gradient-to-br from-indigo-50/90 to-white/95">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🛡️</span>
+              <h3 class="font-display text-lg font-bold text-indigo-950">Panel Otoritas Admin</h3>
+            </div>
+            <span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+              Sheets Terhubung
+            </span>
+          </div>
+
+          <div class="space-y-3">
+            <!-- Edit Judul Papan -->
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Judul Papan Klasemen</label>
+              <div class="flex gap-2">
+                <input id="inputBoardTitle" type="text" maxlength="40" value="Klasemen Sultan Poin"
+                  class="w-full px-3 py-2 rounded-xl bg-white border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-xs font-bold text-slate-800" />
+                <button id="btnSaveTitle" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shrink-0 transition active:scale-95">
+                  Simpan
+                </button>
+              </div>
+            </div>
+
+            <!-- Ganti PIN Admin -->
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-indigo-100">
+              <div class="text-xs text-slate-600">
+                PIN Admin: <strong id="currentPinDisplay" class="text-indigo-700 font-mono">1234</strong>
+              </div>
+              <button id="btnOpenChangePin" class="px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-xs transition">
+                🔑 Ganti PIN
+              </button>
+            </div>
+
+            <!-- Tombol Push & Pull Manual Google Sheets -->
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-indigo-100">
+              <button id="btnPushAllSheets" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 shadow-sm">
+                <span>☁️</span>
+                <span>Kirim Semua ke Sheet</span>
+              </button>
+              <button id="btnPullFromSheets" class="px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 shadow-sm">
+                <span>📥</span>
+                <span>Tarik dari Sheet</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Tambah Peserta Baru -->
+        <div class="glass-panel rounded-3xl p-5 shadow-xl">
+          <div class="flex items-center gap-2 mb-3.5">
+            <span class="text-xl">➕</span>
+            <h3 class="font-display text-lg font-bold text-slate-800">Rekrut Peserta Baru</h3>
+          </div>
+
+          <form id="addPlayerForm" class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Nama Peserta / Tim</label>
+              <input id="inputName" type="text" maxlength="26" placeholder="Contoh: Kucing Oren Barbar" required
+                class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-sm font-semibold transition" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Poin Awal</label>
+                <input id="inputScore" type="number" value="100" step="10"
+                  class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-sm font-bold transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Julukan Lucu</label>
+                <input id="inputTitle" type="text" maxlength="22" placeholder="Otomatis jika kosong"
+                  class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-sm font-semibold transition" />
+              </div>
+            </div>
+
+            <!-- Pemilih Avatar Lucu -->
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5">Pilih Avatar Karakter</label>
+              <div id="avatarPicker" class="grid grid-cols-6 gap-1.5 bg-slate-100/80 p-2 rounded-2xl border border-slate-200/70">
+                <!-- Tombol emoji diisi JS -->
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white font-display font-bold text-base shadow-lg shadow-indigo-500/30 transition transform active:scale-98 flex items-center justify-center gap-2">
+              <span>🚀</span>
+              <span>Masuk ke Arena & Simpan</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Kontrol Aksi & Kejutan Arena -->
+        <div class="glass-panel rounded-3xl p-5 shadow-xl">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🎛️</span>
+              <h3 class="font-display text-lg font-bold text-slate-800">Kontrol & Kejutan</h3>
+            </div>
+            <span id="speedBadge" class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">1.5 dtk</span>
+          </div>
+
+          <div class="mb-4">
+            <div class="flex justify-between text-xs font-bold text-slate-500 mb-1">
+              <span>Kecepatan Simulasi</span>
+              <span id="speedLabel">Normal</span>
+            </div>
+            <input id="speedSlider" type="range" min="500" max="3500" step="250" value="1500"
+              class="w-full accent-indigo-600 cursor-pointer" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnBonusRain" class="px-3 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
+              <span>🌧️</span>
+              <span>Hujan Poin Acak</span>
+            </button>
+            <button id="btnShuffleChaos" class="px-3 py-2.5 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-900 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
+              <span>🌪️</span>
+              <span>Plot Twist!</span>
+            </button>
+            <button id="btnResetScores" class="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
+              <span>🔄</span>
+              <span>Nol-kan Skor</span>
+            </button>
+            <button id="btnRestoreDemo" class="px-3 py-2.5 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
+              <span>✨</span>
+              <span>Data Contoh</span>
+            </button>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 1: LOGIN OTORITAS ADMIN                             -->
+  <!-- ========================================================= -->
+  <div id="adminLoginModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div id="adminLoginCard" class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-indigo-100 animate-pop">
+      <div class="text-center mb-4">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-3xl mx-auto mb-2">
+          🔐
+        </div>
+        <h3 class="font-display text-2xl font-bold text-slate-900">Otoritas Admin</h3>
+        <p class="text-xs text-slate-500 mt-1">
+          Masukkan PIN Admin untuk mengelola peserta dan mengatur poin klasemen.
+        </p>
+      </div>
+
+      <form id="adminLoginForm" class="space-y-3">
+        <div>
+          <input id="inputAdminPin" type="password" inputmode="numeric" maxlength="12" placeholder="Masukkan PIN (Default: 1234)" required
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none text-center font-mono text-xl font-extrabold tracking-widest" />
+          <p id="pinErrorMsg" class="hidden text-xs font-bold text-rose-600 text-center mt-1.5">
+            ❌ PIN salah! Coba lagi (default: 1234).
+          </p>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button type="button" id="btnCancelLogin" class="w-1/2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+            Batal
+          </button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 transition">
+            Buka Akses
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 2: GANTI PIN ADMIN                                  -->
+  <!-- ========================================================= -->
+  <div id="changePinModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-indigo-100 animate-pop">
+      <div class="text-center mb-4">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-2">
+          🔑
+        </div>
+        <h3 class="font-display text-xl font-bold text-slate-900">Ubah PIN Admin</h3>
+        <p class="text-xs text-slate-500 mt-1">PIN baru akan tersimpan ke tab Settings di Google Sheets.</p>
+      </div>
+
+      <form id="changePinForm" class="space-y-3">
+        <input id="inputNewPin" type="text" inputmode="numeric" minlength="4" maxlength="12" placeholder="Minimal 4 angka/karakter" required
+          class="w-full px-4 py-3 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-center font-mono text-lg font-extrabold tracking-widest" />
+        <div class="flex gap-2">
+          <button type="button" id="btnCancelChangePin" class="w-1/2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">
+            Batal
+          </button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md">
+            Simpan PIN
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 3: EDIT POIN KUSTOM (ADMIN ONLY)                    -->
+  <!-- ========================================================= -->
+  <div id="customScoreModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-indigo-100 animate-pop">
+      <div class="flex items-center gap-3 mb-4">
+        <span id="modalAvatar" class="text-4xl">🐱</span>
+        <div>
+          <h3 id="modalPlayerName" class="font-display text-xl font-bold text-slate-900">Nama Peserta</h3>
+          <p class="text-xs font-bold text-slate-500">Atur skor langsung atau tambah/kurangi poin</p>
+        </div>
+      </div>
+
+      <form id="customScoreForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Masukkan Nilai Poin</label>
+          <input id="modalScoreInput" type="number" required
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-2xl font-display font-bold text-center text-indigo-700" />
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" data-mode="add" class="modal-apply-btn py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-sm">
+            + Tambah
+          </button>
+          <button type="button" data-mode="sub" class="modal-apply-btn py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-sm">
+            - Kurangi
+          </button>
+          <button type="button" data-mode="set" class="modal-apply-btn py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm">
+            = Set Jadi
+          </button>
+        </div>
+
+        <button type="button" id="btnCloseCustomScore" class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs">
+          Tutup
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFIKASI -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // =========================================================
+    // 1. KONFIGURASI GOOGLE APPS SCRIPT & STATE APLIKASI
+    // =========================================================
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzVjvSebnnUyWhUCZp87000RstBGPESZa5DuuxHuiijBOr_BgL_OuBpXuZNW_d43Gk3/exec';
+    const DEFAULT_PIN = '1234';
+    const STORAGE_KEY_ADMIN_SESSION = 'fun_leaderboard_admin_session_v3';
+
+    const AVATARS = [
+      '🐱', '🐶', '🦊', '🐼', '🐨', '🦁',
+      '🐯', '🐸', '🐵', '🦄', '🐲', '🐙',
+      '🦖', '🐧', '🦉', '🤖', '👽', '👻'
+    ];
+
+    const FUNNY_TITLES = [
+      'Sultan Poin', 'Dewa Rebahan', 'Kucing Oren', 'Si Paling Gas',
+      'Ninja Deadline', 'Sobat Ambis', 'Mochi Terbang', 'Kapten Santuy',
+      'Sepuh Poin', 'Pejuang Receh', 'Raja Plot Twist', 'Warga +62'
+    ];
+
+    const INITIAL_PLAYERS = [
+      { id: 'p1', name: 'Kucing Oren Barbar', avatar: '🐱', score: 1650, title: 'Sepuh Poin' },
+      { id: 'p2', name: 'Panda Rebahan Elit', avatar: '🐼', score: 1520, title: 'Dewa Rebahan' },
+      { id: 'p3', name: 'Rubah Licik 99', avatar: '🦊', score: 1410, title: 'Raja Plot Twist' },
+      { id: 'p4', name: 'Dino Salah Jurusan', avatar: '🦖', score: 1290, title: 'Si Paling Gas' },
+      { id: 'p5', name: 'Kodok Zuma Pro', avatar: '🐸', score: 1180, title: 'Kapten Santuy' },
+      { id: 'p6', name: 'Unicorn Magang', avatar: '🦄', score: 1090, title: 'Sobat Ambis' },
+      { id: 'p7', name: 'Gurita Multitasking', avatar: '🐙', score: 980, title: 'Ninja Deadline' },
+      { id: 'p8', name: 'Robot Kurang Oli', avatar: '🤖', score: 870, title: 'Pejuang Receh' },
+      { id: 'p9', name: 'Pinguin Kesasar', avatar: '🐧', score: 760, title: 'Warga +62' }
+    ];
+
+    const COMMENTARY_TEMPLATES = {
+      up: [
+        "🚀 WUUUSH! {name} menyalip tajam ke peringkat #{rank}!",
+        "🔥 Panas banget! {name} ngegas naik ke posisi #{rank}!",
+        "⚡ Minggir semua! {name} meroket menuju peringkat #{rank}!",
+        "😎 Santai tapi pasti, {name} mengamankan kursi #{rank}!"
+      ],
+      top1: [
+        "👑 KUDETA SUKSES! {name} resmi merebut takhta Juara #1!",
+        "🎉 HAIL THE KING! {name} sekarang berkuasa di puncak klasemen!",
+        "🏆 Tak terbendung! {name} menggulingkan takhta dan jadi #1!"
+      ],
+      top7Enter: [
+        "✨ SELAMAT! {name} berhasil menembus Podium Kehormatan Top 7 (#{rank})!",
+        "🎖️ Masuk jajaran Elite! {name} naik ke Podium #{rank}!"
+      ],
+      down: [
+        "🍌 Aduh kepeleset kulit pisang! {name} melorot ke #{rank}...",
+        "🐢 {name} lagi mode hemat baterai, turun ke peringkat #{rank}.",
+        "😱 Drama arena! {name} tergeser ke posisi #{rank}!"
+      ],
+      bonus: [
+        "🌧️ HUJAN POIN! Semua peserta ketiban rezeki nomplok!",
+        "🎁 Santa Claus lewat! Poin gratis bertebaran di arena!"
+      ],
+      chaos: [
+        "🌪️ PLOT TWIST! Poin diacak semesta, klasemen jungkir balik!",
+        "🎲 Badai kocok ulang melanda arena! Siapa yang selamat?!"
+      ]
+    };
+
+    // State Utama
+    let players = JSON.parse(JSON.stringify(INITIAL_PLAYERS));
+    let previousRanks = {};
+    let rankChanges = {};
+    let selectedAvatar = AVATARS[0];
+    let soundEnabled = true;
+    let autoLiveInterval = null;
+    let autoLiveSpeed = 1500;
+    let lastTop1Id = null;
+
+    // State Otoritas & Google Sheets Sync
+    let isAdmin = false;
+    let adminPin = DEFAULT_PIN;
+    let boardTitle = 'Klasemen Sultan Poin';
+    let listFilterMode = 'from8'; // 'from8' | 'all'
+    let activeModalPlayerId = null;
+    let isSyncingToSheet = false;
+    let pollingInterval = null;
+
+    // =========================================================
+    // 2. SOUND EFFECTS (WEB AUDIO API)
+    // =========================================================
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioCtx();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'up') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.16);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        } else if (type === 'down') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(340, now);
+          osc.frequency.exponentialRampToValueAtTime(150, now + 0.22);
+          gain.gain.setValueAtTime(0.11, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.23);
+          osc.start(now);
+          osc.stop(now + 0.23);
+        } else if (type === 'fanfare') {
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = 'triangle';
+            o.connect(g);
+            g.connect(ctx.destination);
+            const t = now + idx * 0.08;
+            o.frequency.setValueAtTime(freq, t);
+            g.gain.setValueAtTime(0.16, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+            o.start(t);
+            o.stop(t + 0.28);
+          });
+        } else if (type === 'pop') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.09);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        }
+      } catch (e) {}
+    }
+
+    // =========================================================
+    // 3. KONEKSI GOOGLE APPS SCRIPT (GET & POST SELARAS CODE.GS)
+    // =========================================================
+    function setSheetSyncStatus(state, text) {
+      const badge = document.getElementById('sheetSyncBadge');
+      const dot = document.getElementById('sheetSyncDot');
+      const label = document.getElementById('sheetSyncText');
+      if (!badge || !dot || !label) return;
+
+      label.textContent = text;
+      badge.className = 'inline-flex items-center gap-1.5 text-xs font-extrabold px-2.5 py-0.5 rounded-full border ';
+      dot.className = 'w-2 h-2 rounded-full ';
+
+      if (state === 'syncing') {
+        badge.className += 'bg-amber-100 text-amber-800 border-amber-200';
+        dot.className += 'bg-amber-500 animate-ping';
+      } else if (state === 'ok') {
+        badge.className += 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        dot.className += 'bg-emerald-500';
+      } else {
+        badge.className += 'bg-rose-100 text-rose-700 border-rose-200';
+        dot.className += 'bg-rose-500';
+      }
+    }
+
+    // Tarik data terbaru dari Google Sheets (doGet)
+    async function fetchFromGoogleSheets(silent = false) {
+      if (isSyncingToSheet) return;
+      if (!silent) {
+        setSheetSyncStatus('syncing', 'Menarik data...');
+        document.getElementById('refreshIcon')?.classList.add('animate-spin');
+      }
+
+      try {
+        const res = await fetch(`${GAS_WEB_APP_URL}?t=${Date.now()}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        const data = await res.json();
+
+        if (data && data.status === 'success') {
+          // 1. Terapkan Settings dari Sheet
+          if (data.settings) {
+            if (data.settings.admin_pin) {
+              adminPin = String(data.settings.admin_pin);
+              const pinDisp = document.getElementById('currentPinDisplay');
+              if (pinDisp) pinDisp.textContent = adminPin;
+            }
+            if (data.settings.board_title) {
+              boardTitle = String(data.settings.board_title);
+              document.getElementById('mainBoardTitle').textContent = boardTitle;
+              const titleInput = document.getElementById('inputBoardTitle');
+              if (titleInput && document.activeElement !== titleInput) {
+                titleInput.value = boardTitle;
+              }
+            }
+            if (data.settings.last_commentary) {
+              document.getElementById('commentaryText').textContent = data.settings.last_commentary;
+            }
+          }
+
+          // 2. Terapkan Daftar Peserta dari Sheet
+          if (Array.isArray(data.players) && data.players.length > 0) {
+            const incoming = data.players.map(p => ({
+              id: String(p.id),
+              name: String(p.name),
+              avatar: String(p.avatar || '🐱'),
+              score: Number(p.score) || 0,
+              title: String(p.title || 'Peserta Arena')
+            }));
+
+            const prevSnapshot = JSON.stringify(sortPlayers(players).map(p => ({ id: p.id, score: p.score, name: p.name })));
+            const nextSnapshot = JSON.stringify(sortPlayers(incoming).map(p => ({ id: p.id, score: p.score, name: p.name })));
+
+            if (prevSnapshot !== nextSnapshot) {
+              players = incoming;
+              renderLeaderboard(true);
+            }
+          }
+
+          const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          setSheetSyncStatus('ok', `Sheets Aktif (${nowStr})`);
+          const badge = document.getElementById('lastUpdateBadge');
+          if (badge) badge.textContent = `Sync ${nowStr}`;
+        } else {
+          setSheetSyncStatus('error', 'Respons Sheet Tidak Valid');
+        }
+      } catch (err) {
+        console.error('Gagal fetch Google Sheets:', err);
+        setSheetSyncStatus('error', 'Gagal Konek Sheets');
+      } finally {
+        document.getElementById('refreshIcon')?.classList.remove('animate-spin');
+      }
+    }
+
+    // Kirim perubahan ke Google Sheets (doPost dengan text/plain bebas CORS preflight)
+    async function postToGoogleSheets(payload) {
+      isSyncingToSheet = true;
+      setSheetSyncStatus('syncing', 'Menyimpan ke Sheet...');
+      try {
+        const res = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (data && data.status === 'success') {
+          setSheetSyncStatus('ok', `Tersimpan (${nowStr})`);
+        } else {
+          setSheetSyncStatus('error', 'Gagal Simpan Sheet');
+        }
+      } catch (err) {
+        console.error('Gagal POST ke Google Sheets:', err);
+        setSheetSyncStatus('error', 'Gagal Simpan Sheet');
+      } finally {
+        isSyncingToSheet = false;
+      }
+    }
+
+    // =========================================================
+    // 4. MANAJEMEN OTORITAS ADMIN VS LAYAR PUBLIK
+    // =========================================================
+    function initRoleMode() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const forcedPublic = urlParams.get('view') === 'public';
+
+      if (forcedPublic) {
+        isAdmin = false;
+      } else {
+        isAdmin = sessionStorage.getItem(STORAGE_KEY_ADMIN_SESSION) === 'true';
+      }
+      applyRoleUI();
+    }
+
+    function applyRoleUI() {
+      const roleBadge = document.getElementById('roleStatusBadge');
+      const btnOpenLogin = document.getElementById('btnOpenAdminLogin');
+      const adminHeaderActions = document.getElementById('adminHeaderActions');
+      const adminSidebar = document.getElementById('adminSidebarPanel');
+      const mainGrid = document.getElementById('mainContentGrid');
+      const leaderboardSection = document.getElementById('leaderboardSection');
+
+      if (isAdmin) {
+        roleBadge.textContent = '🛡️ Mode Admin Aktif';
+        roleBadge.className = 'text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-600 text-white shadow-sm';
+        btnOpenLogin.classList.add('hidden');
+        adminHeaderActions.classList.remove('hidden');
+        adminHeaderActions.classList.add('flex');
+        adminSidebar.classList.remove('hidden');
+
+        mainGrid.classList.remove('grid-cols-1');
+        mainGrid.classList.add('grid-cols-1', 'lg:grid-cols-12');
+        leaderboardSection.classList.add('lg:col-span-7');
+      } else {
+        if (autoLiveInterval) stopAutoLive();
+
+        roleBadge.textContent = '👁️ Layar Publik';
+        roleBadge.className = 'text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200';
+        btnOpenLogin.classList.remove('hidden');
+        adminHeaderActions.classList.add('hidden');
+        adminHeaderActions.classList.remove('flex');
+        adminSidebar.classList.add('hidden');
+
+        mainGrid.classList.remove('lg:grid-cols-12');
+        mainGrid.classList.add('grid-cols-1');
+        leaderboardSection.classList.remove('lg:col-span-7');
+      }
+
+      renderLeaderboard(false);
+    }
+
+    function loginAsAdmin(pinInput) {
+      if (pinInput === adminPin) {
+        isAdmin = true;
+        sessionStorage.setItem(STORAGE_KEY_ADMIN_SESSION, 'true');
+        closeModal('adminLoginModal');
+        document.getElementById('inputAdminPin').value = '';
+        document.getElementById('pinErrorMsg').classList.add('hidden');
+        playSound('fanfare');
+        showToast('🛡️ Otoritas Admin aktif! Kontrol penuh dibuka.');
+        applyRoleUI();
+        return true;
+      } else {
+        const err = document.getElementById('pinErrorMsg');
+        const card = document.getElementById('adminLoginCard');
+        err.classList.remove('hidden');
+        card.classList.remove('animate-shake');
+        void card.offsetWidth;
+        card.classList.add('animate-shake');
+        playSound('down');
+        return false;
+      }
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      sessionStorage.removeItem(STORAGE_KEY_ADMIN_SESSION);
+      playSound('pop');
+      showToast('👁️ Kembali ke Mode Layar Publik.');
+      applyRoleUI();
+    }
+
+    // =========================================================
+    // 5. HELPER & LOGIKA KLASEMEN
+    // =========================================================
+    function sortPlayers(list) {
+      return [...list].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    function formatScore(num) {
+      return Number(num).toLocaleString('id-ID');
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 70,
+          spread: 72,
+          origin: { y: 0.58 },
+          colors: ['#facc15', '#fb923c', '#ec4899', '#6366f1', '#10b981']
+        });
+      }
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = 'bg-slate-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xl border border-white/10 animate-pop max-w-xs';
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(10px)';
+        el.style.transition = 'all 0.25s ease';
+        setTimeout(() => el.remove(), 260);
+      }, 2800);
+    }
+
+    function updateCommentary(type, data = {}) {
+      const list = COMMENTARY_TEMPLATES[type] || COMMENTARY_TEMPLATES.up;
+      let text = list[Math.floor(Math.random() * list.length)];
+      if (data.name) text = text.replace('{name}', data.name);
+      if (data.rank) text = text.replace('{rank}', data.rank);
+
+      const box = document.getElementById('commentaryBox');
+      const textEl = document.getElementById('commentaryText');
+      const emojiEl = document.getElementById('commentaryEmoji');
+
+      const emojiMap = {
+        up: '🚀',
+        top1: '👑',
+        top7Enter: '🎖️',
+        down: '🍌',
+        bonus: '🌧️',
+        chaos: '🌪️'
+      };
+
+      emojiEl.textContent = emojiMap[type] || '🎙️';
+      textEl.textContent = text;
+
+      box.classList.remove('animate-shake');
+      void box.offsetWidth;
+      box.classList.add('animate-shake');
+      return text;
+    }
+
+    // =========================================================
+    // 6. RENDER PODIUM KEHORMATAN 7 TERATAS & DAFTAR KLASEMEN
+    // =========================================================
+    function renderLeaderboard(animate = true) {
+      const sorted = sortPlayers(players);
+
+      const firstRects = {};
+      if (animate) {
+        document.querySelectorAll('.rank-card').forEach(el => {
+          firstRects[el.dataset.id] = el.getBoundingClientRect();
+        });
+      }
+
+      const newRanks = {};
+      sorted.forEach((p, idx) => {
+        const currentRank = idx + 1;
+        newRanks[p.id] = currentRank;
+        if (previousRanks[p.id] !== undefined && previousRanks[p.id] !== currentRank) {
+          rankChanges[p.id] = previousRanks[p.id] - currentRank;
+        }
+      });
+
+      if (sorted.length > 0) {
+        const currentTop1 = sorted[0];
+        if (lastTop1Id && lastTop1Id !== currentTop1.id) {
+          triggerConfetti();
+          playSound('fanfare');
+        }
+        lastTop1Id = currentTop1.id;
+      }
+
+      renderTop3Podium(sorted.slice(0, 3));
+      renderTop4to7Podium(sorted.slice(3, 7));
+
+      const totalBadge = document.getElementById('totalPlayersBadge');
+      if (totalBadge) totalBadge.textContent = `${sorted.length} Peserta`;
+
+      const listEl = document.getElementById('leaderboardList');
+      const emptyEl = document.getElementById('emptyState');
+
+      const displayPlayers = listFilterMode === 'from8' ? sorted.slice(7) : sorted;
+
+      if (displayPlayers.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+        listEl.innerHTML = displayPlayers.map((p) => {
+          const rank = newRanks[p.id];
+          const delta = rankChanges[p.id] || 0;
+
+          let deltaBadge = `<span class="text-[11px] font-bold text-slate-300 w-9 text-center">—</span>`;
+          if (delta > 0) {
+            deltaBadge = `<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-700 w-9">▲${delta}</span>`;
+          } else if (delta < 0) {
+            deltaBadge = `<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-700 w-9">▼${Math.abs(delta)}</span>`;
+          }
+
+          let rankStyle = 'bg-slate-100 text-slate-600';
+          let cardBorder = 'border-slate-100 hover:border-indigo-200 bg-white/95';
+          if (rank === 1) {
+            rankStyle = 'bg-amber-400 text-amber-950 shadow-sm';
+            cardBorder = 'border-amber-300 bg-amber-50/70';
+          } else if (rank === 2) {
+            rankStyle = 'bg-slate-300 text-slate-800';
+          } else if (rank === 3) {
+            rankStyle = 'bg-orange-300 text-orange-950';
+          } else if (rank <= 7) {
+            rankStyle = 'bg-indigo-100 text-indigo-800 border border-indigo-200';
+            cardBorder = 'border-indigo-100 bg-indigo-50/40';
+          }
+
+          const adminControlsHtml = isAdmin ? `
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="changeScore('${p.id}', -5)" title="Kurangi 5 poin"
+                class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white font-extrabold text-xs transition active:scale-90 flex items-center justify-center border border-rose-200">
+                -5
+              </button>
+              <button onclick="changeScore('${p.id}', 1)" title="Tambah 1 poin"
+                class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-sky-50 hover:bg-sky-500 text-sky-600 hover:text-white font-extrabold text-xs transition active:scale-90 flex items-center justify-center border border-sky-200">
+                +1
+              </button>
+              <button onclick="changeScore('${p.id}', 10)" title="Tambah 10 poin"
+                class="w-8 h-7 sm:w-9 sm:h-8 rounded-xl bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white font-extrabold text-xs transition active:scale-90 flex items-center justify-center border border-emerald-200">
+                +10
+              </button>
+              <button onclick="openCustomScoreModal('${p.id}')" title="Input poin kustom"
+                class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white font-extrabold text-xs transition active:scale-90 flex items-center justify-center border border-indigo-200">
+                ✏️
+              </button>
+              <button onclick="removePlayer('${p.id}')" title="Hapus peserta"
+                class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-50 hover:bg-rose-600 text-slate-400 hover:text-white font-bold text-xs transition active:scale-90 flex items-center justify-center">
+                ✕
+              </button>
+            </div>
+          ` : '';
+
+          return `
+            <div data-id="${p.id}" class="rank-card group flex items-center justify-between gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-2xl border-2 ${cardBorder} shadow-sm transition-colors">
+              <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl ${rankStyle} font-display font-bold text-sm sm:text-base flex items-center justify-center shrink-0">
+                  #${rank}
+                </div>
+                ${deltaBadge}
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+                  ${p.avatar}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <p class="font-bold text-sm sm:text-base text-slate-800 truncate">${escapeHtml(p.name)}</p>
+                    ${rank <= 7 ? '<span class="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700 shrink-0">TOP 7</span>' : ''}
+                  </div>
+                  <span class="inline-block text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                    ${escapeHtml(p.title)}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div class="text-right">
+                  <span class="font-display font-bold text-base sm:text-xl text-indigo-700 block leading-none">
+                    ${formatScore(p.score)}
+                  </span>
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">poin</span>
+                </div>
+                ${adminControlsHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (animate) {
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.rank-card').forEach(el => {
+            const id = el.dataset.id;
+            const first = firstRects[id];
+            if (!first) return;
+            const last = el.getBoundingClientRect();
+            const dy = first.top - last.top;
+            if (Math.abs(dy) > 1) {
+              el.style.transform = `translateY(${dy}px)`;
+              el.style.transition = 'none';
+              requestAnimationFrame(() => {
+                el.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
+                el.style.transform = '';
+              });
+            }
+          });
+        });
+      }
+
+      previousRanks = newRanks;
+    }
+
+    // Render Baris 1: Podium Utama Top 3 (Juara 2 - Juara 1 - Juara 3)
+    function renderTop3Podium(top3) {
+      const container = document.getElementById('podiumTop3');
+      const podiumOrder = [
+        { player: top3[1], rank: 2, height: 'h-24 sm:h-28', stepClass: 'podium-step-2', medal: '🥈', badgeBg: 'bg-slate-200 text-slate-800' },
+        { player: top3[0], rank: 1, height: 'h-32 sm:h-36', stepClass: 'podium-step-1 glow-gold', medal: '👑', badgeBg: 'bg-amber-300 text-amber-950' },
+        { player: top3[2], rank: 3, height: 'h-20 sm:h-24', stepClass: 'podium-step-3', medal: '🥉', badgeBg: 'bg-orange-200 text-orange-950' }
+      ];
+
+      container.innerHTML = podiumOrder.map(slot => {
+        if (!slot.player) {
+          return `<div class="flex flex-col items-center opacity-40"><div class="w-full ${slot.height} rounded-t-3xl bg-white/40 border-2 border-dashed border-slate-300 flex items-center justify-center font-display text-slate-400 font-bold">Kosong</div></div>`;
+        }
+        const p = slot.player;
+        const isFirst = slot.rank === 1;
+
+        const quickAdminBtn = isAdmin ? `
+          <div class="mt-1.5 flex items-center justify-center gap-1">
+            <button onclick="changeScore('${p.id}', 10)" class="px-2 py-0.5 rounded-lg bg-white/90 hover:bg-white text-slate-900 font-extrabold text-[11px] shadow-sm active:scale-90 transition">+10</button>
+            <button onclick="openCustomScoreModal('${p.id}')" class="px-1.5 py-0.5 rounded-lg bg-white/75 hover:bg-white text-slate-800 font-bold text-[10px] shadow-sm">✏️</button>
+          </div>
+        ` : '';
+
+        return `
+          <div class="flex flex-col items-center text-center">
+            <div class="relative mb-2 flex flex-col items-center">
+              <span class="text-2xl sm:text-3xl mb-0.5 ${isFirst ? 'animate-crown text-3xl sm:text-4xl' : ''}">${slot.medal}</span>
+              <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-white shadow-xl border-4 ${isFirst ? 'border-amber-400 scale-105' : 'border-white'} flex items-center justify-center text-3xl sm:text-4xl transition-transform">
+                ${p.avatar}
+              </div>
+              <span class="mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-extrabold ${slot.badgeBg} shadow-sm max-w-[115px] sm:max-w-[160px] truncate">
+                ${escapeHtml(p.name)}
+              </span>
+              <span class="font-display font-bold text-sm sm:text-lg text-slate-900 mt-0.5">
+                ${formatScore(p.score)} <span class="text-[10px] font-bold text-slate-500">pts</span>
+              </span>
+            </div>
+
+            <div class="w-full ${slot.height} ${slot.stepClass} rounded-t-3xl shadow-lg border-t-2 border-white/80 flex flex-col items-center justify-center p-2 relative overflow-hidden">
+              <span class="font-display text-3xl sm:text-5xl font-extrabold text-slate-900/80 leading-none">#${slot.rank}</span>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-900/70 mt-1 truncate max-w-full px-1">
+                ${escapeHtml(p.title)}
+              </span>
+              ${quickAdminBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Baris 2: Pilar Kehormatan Peringkat 4 - 7
+    function renderTop4to7Podium(top4to7) {
+      const container = document.getElementById('podiumTop4to7');
+      const slots = [0, 1, 2, 3].map(idx => ({
+        player: top4to7[idx],
+        rank: idx + 4
+      }));
+
+      container.innerHTML = slots.map(slot => {
+        if (!slot.player) {
+          return `
+            <div class="rounded-2xl bg-white/40 border-2 border-dashed border-slate-300/80 p-3 text-center opacity-50">
+              <span class="font-display font-bold text-sm text-slate-400">Kursi Kehormatan #${slot.rank}</span>
+            </div>
+          `;
+        }
+
+        const p = slot.player;
+        const delta = rankChanges[p.id] || 0;
+        const deltaTag = delta > 0
+          ? `<span class="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700">▲${delta}</span>`
+          : delta < 0
+            ? `<span class="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-700">▼${Math.abs(delta)}</span>`
+            : '';
+
+        const adminMiniBtn = isAdmin ? `
+          <div class="flex items-center justify-center gap-1 mt-2 pt-1.5 border-t border-indigo-200/60">
+            <button onclick="changeScore('${p.id}', -5)" class="px-1.5 py-0.5 rounded bg-rose-100 hover:bg-rose-500 text-rose-700 hover:text-white font-extrabold text-[10px] transition">-5</button>
+            <button onclick="changeScore('${p.id}', 10)" class="px-2 py-0.5 rounded bg-emerald-100 hover:bg-emerald-500 text-emerald-700 hover:text-white font-extrabold text-[10px] transition">+10</button>
+            <button onclick="openCustomScoreModal('${p.id}')" class="px-1.5 py-0.5 rounded bg-white hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold text-[10px] transition">✏️</button>
+          </div>
+        ` : '';
+
+        return `
+          <div class="glass-panel rounded-2xl p-3 border-2 border-indigo-200/80 shadow-md flex flex-col justify-between relative overflow-hidden">
+            <div class="flex items-center justify-between gap-1 mb-1.5">
+              <span class="px-2 py-0.5 rounded-lg bg-indigo-600 text-white font-display font-bold text-xs shadow-sm">
+                #${slot.rank} Elite
+              </span>
+              ${deltaTag}
+            </div>
+
+            <div class="flex items-center gap-2.5 my-1">
+              <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 border border-indigo-200 flex items-center justify-center text-2xl shrink-0">
+                ${p.avatar}
+              </div>
+              <div class="min-w-0 text-left">
+                <p class="font-bold text-xs sm:text-sm text-slate-900 truncate">${escapeHtml(p.name)}</p>
+                <p class="text-[10px] font-semibold text-indigo-600 truncate">${escapeHtml(p.title)}</p>
+                <p class="font-display font-bold text-sm sm:text-base text-slate-800 leading-tight mt-0.5">
+                  ${formatScore(p.score)} <span class="text-[10px] font-bold text-slate-400">pts</span>
+                </p>
+              </div>
+            </div>
+
+            ${adminMiniBtn}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================
+    // 7. AKSI ADMIN (TERPROTEKSI & OTOMATIS SYNC GOOGLE SHEETS)
+    // =========================================================
+    function requireAdmin() {
+      if (!isAdmin) {
+        showToast('🔒 Fitur ini khusus Otoritas Admin!');
+        openModal('adminLoginModal');
+        return false;
+      }
+      return true;
+    }
+
+    window.changeScore = function(id, delta, isAuto = false) {
+      if (!requireAdmin()) return;
+
+      const player = players.find(p => p.id === id);
+      if (!player) return;
+
+      const oldSorted = sortPlayers(players);
+      const oldRank = oldSorted.findIndex(p => p.id === id) + 1;
+
+      player.score = Math.max(0, player.score + delta);
+
+      const newSorted = sortPlayers(players);
+      const newRank = newSorted.findIndex(p => p.id === id) + 1;
+
+      let commentaryText = '';
+      if (newRank === 1 && oldRank > 1) {
+        commentaryText = updateCommentary('top1', { name: player.name });
+      } else if (newRank <= 7 && oldRank > 7) {
+        commentaryText = updateCommentary('top7Enter', { name: player.name, rank: newRank });
+        playSound('up');
+      } else if (newRank < oldRank) {
+        commentaryText = updateCommentary('up', { name: player.name, rank: newRank });
+        if (!isAuto) playSound('up');
+      } else if (newRank > oldRank) {
+        commentaryText = updateCommentary('down', { name: player.name, rank: newRank });
+        if (!isAuto) playSound('down');
+      } else if (!isAuto) {
+        playSound(delta >= 0 ? 'pop' : 'down');
+      }
+
+      renderLeaderboard(true);
+
+      // Kirim perubahan skor ke Google Sheets
+      postToGoogleSheets({
+        action: 'update_score',
+        id: player.id,
+        score: player.score,
+        commentary: commentaryText || document.getElementById('commentaryText').textContent
+      });
+    };
+
+    window.removePlayer = function(id) {
+      if (!requireAdmin()) return;
+      const target = players.find(p => p.id === id);
+      players = players.filter(p => p.id !== id);
+      delete previousRanks[id];
+      delete rankChanges[id];
+      playSound('down');
+      renderLeaderboard(true);
+
+      if (target) {
+        showToast(`👋 ${target.name} dihapus dari Google Sheets.`);
+        postToGoogleSheets({
+          action: 'delete_player',
+          id: id
+        });
+      }
+    };
+
+    window.openCustomScoreModal = function(id) {
+      if (!requireAdmin()) return;
+      const p = players.find(item => item.id === id);
+      if (!p) return;
+      activeModalPlayerId = id;
+      document.getElementById('modalAvatar').textContent = p.avatar;
+      document.getElementById('modalPlayerName').textContent = `${p.name} (${formatScore(p.score)} pts)`;
+      document.getElementById('modalScoreInput').value = 50;
+      openModal('customScoreModal');
+    };
+
+    function openModal(modalId) {
+      const el = document.getElementById(modalId);
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    }
+
+    function closeModal(modalId) {
+      const el = document.getElementById(modalId);
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+
+    function addPlayer(name, score, title) {
+      if (!requireAdmin()) return;
+
+      const cleanTitle = title.trim() || FUNNY_TITLES[Math.floor(Math.random() * FUNNY_TITLES.length)];
+      const newPlayer = {
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: name.trim(),
+        avatar: selectedAvatar,
+        score: Math.max(0, Number(score) || 0),
+        title: cleanTitle
+      };
+      players.push(newPlayer);
+      playSound('up');
+      const commentary = updateCommentary('up', { name: newPlayer.name, rank: sortPlayers(players).findIndex(p => p.id === newPlayer.id) + 1 });
+      renderLeaderboard(true);
+      showToast(`🎉 ${newPlayer.name} tersimpan ke Google Sheets!`);
+
+      postToGoogleSheets({
+        action: 'add_player',
+        player: newPlayer,
+        commentary: commentary
+      });
+    }
+
+    function startAutoLive() {
+      if (!requireAdmin()) return;
+      if (autoLiveInterval) return;
+
+      const btn = document.getElementById('btnAutoLive');
+      const icon = document.getElementById('autoLiveIcon');
+      const text = document.getElementById('autoLiveText');
+
+      btn.classList.remove('from-emerald-500', 'to-teal-500');
+      btn.classList.add('from-rose-500', 'to-orange-500');
+      icon.textContent = '⏸️';
+      text.textContent = 'Hentikan Live';
+
+      autoLiveInterval = setInterval(() => {
+        if (players.length === 0) return;
+        const randomPlayer = players[Math.floor(Math.random() * players.length)];
+        const deltas = [-20, -10, +15, +25, +35, +50, +80];
+        const randomDelta = deltas[Math.floor(Math.random() * deltas.length)];
+        changeScore(randomPlayer.id, randomDelta, true);
+      }, autoLiveSpeed);
+    }
+
+    function stopAutoLive() {
+      if (!autoLiveInterval) return;
+      clearInterval(autoLiveInterval);
+      autoLiveInterval = null;
+
+      const btn = document.getElementById('btnAutoLive');
+      const icon = document.getElementById('autoLiveIcon');
+      const text = document.getElementById('autoLiveText');
+
+      btn.classList.remove('from-rose-500', 'to-orange-500');
+      btn.classList.add('from-emerald-500', 'to-teal-500');
+      icon.textContent = '▶️';
+      text.textContent = 'Simulasi Acak';
+    }
+
+    function renderAvatarPicker() {
+      const picker = document.getElementById('avatarPicker');
+      picker.innerHTML = AVATARS.map(emoji => `
+        <button type="button" data-avatar="${emoji}"
+          class="avatar-opt h-9 rounded-xl text-xl flex items-center justify-center transition transform hover:scale-110 ${emoji === selectedAvatar ? 'bg-indigo-600 shadow-md scale-105 ring-2 ring-indigo-300' : 'bg-white hover:bg-indigo-50'}">
+          ${emoji}
+        </button>
+      `).join('');
+
+      picker.querySelectorAll('.avatar-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedAvatar = btn.dataset.avatar;
+          renderAvatarPicker();
+          playSound('pop');
+        });
+      });
+    }
+
+    // =========================================================
+    // 8. EVENT LISTENERS & INISIALISASI
+    // =========================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAvatarPicker();
+      initRoleMode();
+
+      // Tarik data awal dari Google Sheets saat halaman dimuat
+      fetchFromGoogleSheets(false);
+
+      // Polling otomatis setiap 4 detik agar Layar Publik live update dari Sheets
+      pollingInterval = setInterval(() => {
+        if (!autoLiveInterval) {
+          fetchFromGoogleSheets(true);
+        }
+      }, 4000);
+
+      // Refresh Manual
+      document.getElementById('btnManualRefresh').addEventListener('click', () => {
+        playSound('pop');
+        fetchFromGoogleSheets(false);
+        showToast('🔄 Menyegarkan data dari Google Sheets...');
+      });
+
+      // Toggle Suara
+      document.getElementById('btnSound').addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        document.getElementById('soundIcon').textContent = soundEnabled ? '🔊' : '🔇';
+        document.getElementById('soundLabel').textContent = soundEnabled ? 'SFX On' : 'SFX Off';
+        if (soundEnabled) playSound('pop');
+      });
+
+      // Filter Peringkat 8+ vs Semua
+      const btnFrom8 = document.getElementById('filterFrom8');
+      const btnAll = document.getElementById('filterAll');
+      btnFrom8.addEventListener('click', () => {
+        listFilterMode = 'from8';
+        btnFrom8.className = 'px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-indigo-700 shadow-sm transition';
+        btnAll.className = 'px-3 py-1 rounded-lg text-xs font-extrabold text-slate-600 hover:text-slate-900 transition';
+        renderLeaderboard(false);
+      });
+      btnAll.addEventListener('click', () => {
+        listFilterMode = 'all';
+        btnAll.className = 'px-3 py-1 rounded-lg text-xs font-extrabold bg-white text-indigo-700 shadow-sm transition';
+        btnFrom8.className = 'px-3 py-1 rounded-lg text-xs font-extrabold text-slate-600 hover:text-slate-900 transition';
+        renderLeaderboard(false);
+      });
+
+      // Modal Login Admin
+      document.getElementById('btnOpenAdminLogin').addEventListener('click', () => {
+        openModal('adminLoginModal');
+        setTimeout(() => document.getElementById('inputAdminPin').focus(), 100);
+      });
+      document.getElementById('btnCancelLogin').addEventListener('click', () => {
+        closeModal('adminLoginModal');
+        document.getElementById('pinErrorMsg').classList.add('hidden');
+      });
+      document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        loginAsAdmin(document.getElementById('inputAdminPin').value.trim());
+      });
+
+      // Keluar Admin
+      document.getElementById('btnExitAdmin').addEventListener('click', logoutAdmin);
+
+      // Simpan Judul Papan Klasemen ke Sheets
+      document.getElementById('btnSaveTitle').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        const val = document.getElementById('inputBoardTitle').value.trim();
+        if (!val) return;
+        boardTitle = val;
+        document.getElementById('mainBoardTitle').textContent = boardTitle;
+        playSound('pop');
+        showToast('📝 Judul papan diperbarui & disimpan ke Sheet!');
+        postToGoogleSheets({
+          action: 'save_settings',
+          settings: {
+            board_title: boardTitle
+          }
+        });
+      });
+
+      // Push Semua Data & Pull dari Google Sheets
+      document.getElementById('btnPushAllSheets').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        playSound('pop');
+        showToast('☁️ Mengirim seluruh data ke Google Sheets...');
+        postToGoogleSheets({
+          action: 'sync_all',
+          players: players,
+          settings: {
+            admin_pin: adminPin,
+            board_title: boardTitle,
+            last_commentary: document.getElementById('commentaryText').textContent
+          }
+        });
+      });
+
+      document.getElementById('btnPullFromSheets').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        playSound('pop');
+        fetchFromGoogleSheets(false);
+        showToast('📥 Menarik data terbaru dari Google Sheets...');
+      });
+
+      // Salin Link Layar Publik
+      document.getElementById('btnCopyPublicLink').addEventListener('click', async () => {
+        const publicUrl = new URL(window.location.href);
+        publicUrl.searchParams.set('view', 'public');
+        const linkText = publicUrl.toString();
+
+        try {
+          await navigator.clipboard.writeText(linkText);
+          playSound('pop');
+          showToast('🔗 Link Layar Publik disalin! Bagikan ke penonton.');
+        } catch (err) {
+          prompt('Salin link Layar Publik di bawah ini:', linkText);
+        }
+      });
+
+      // Ganti PIN Admin & Simpan ke Sheets
+      document.getElementById('btnOpenChangePin').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        document.getElementById('inputNewPin').value = '';
+        openModal('changePinModal');
+      });
+      document.getElementById('btnCancelChangePin').addEventListener('click', () => closeModal('changePinModal'));
+      document.getElementById('changePinForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newPin = document.getElementById('inputNewPin').value.trim();
+        if (newPin.length >= 4) {
+          adminPin = newPin;
+          document.getElementById('currentPinDisplay').textContent = adminPin;
+          closeModal('changePinModal');
+          playSound('pop');
+          showToast(`🔑 PIN Admin diperbarui ke "${adminPin}" & tersimpan di Sheet!`);
+          postToGoogleSheets({
+            action: 'save_settings',
+            settings: {
+              admin_pin: adminPin
+            }
+          });
+        }
+      });
+
+      // Modal Poin Kustom
+      document.getElementById('btnCloseCustomScore').addEventListener('click', () => closeModal('customScoreModal'));
+      document.querySelectorAll('.modal-apply-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!requireAdmin() || !activeModalPlayerId) return;
+          const val = Number(document.getElementById('modalScoreInput').value) || 0;
+          const mode = btn.dataset.mode;
+          const player = players.find(p => p.id === activeModalPlayerId);
+          if (!player) return;
+
+          if (mode === 'add') {
+            changeScore(player.id, val);
+          } else if (mode === 'sub') {
+            changeScore(player.id, -Math.abs(val));
+          } else if (mode === 'set') {
+            const diff = Math.max(0, val) - player.score;
+            changeScore(player.id, diff);
+          }
+          closeModal('customScoreModal');
+        });
+      });
+
+      // Toggle Simulasi Acak
+      document.getElementById('btnAutoLive').addEventListener('click', () => {
+        if (autoLiveInterval) stopAutoLive();
+        else startAutoLive();
+      });
+
+      // Slider Kecepatan
+      const speedSlider = document.getElementById('speedSlider');
+      speedSlider.addEventListener('input', (e) => {
+        autoLiveSpeed = Number(e.target.value);
+        const sec = (autoLiveSpeed / 1000).toFixed(1);
+        document.getElementById('speedBadge').textContent = `${sec} dtk`;
+        document.getElementById('speedLabel').textContent =
+          autoLiveSpeed <= 750 ? 'Super Ngebut ⚡' :
+          autoLiveSpeed <= 1750 ? 'Normal' : 'Santai 🐢';
+
+        if (autoLiveInterval) {
+          stopAutoLive();
+          startAutoLive();
+        }
+      });
+
+      // Form Rekrut Peserta
+      document.getElementById('addPlayerForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('inputName');
+        const scoreInput = document.getElementById('inputScore');
+        const titleInput = document.getElementById('inputTitle');
+        if (!nameInput.value.trim()) return;
+
+        addPlayer(nameInput.value, scoreInput.value, titleInput.value);
+        nameInput.value = '';
+        titleInput.value = '';
+        scoreInput.value = 100;
+      });
+
+      // Hujan Poin Acak
+      document.getElementById('btnBonusRain').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        players.forEach(p => {
+          p.score += Math.floor(Math.random() * 60) + 15;
+        });
+        playSound('fanfare');
+        triggerConfetti();
+        const commentary = updateCommentary('bonus');
+        renderLeaderboard(true);
+        postToGoogleSheets({
+          action: 'sync_all',
+          players: players,
+          settings: { last_commentary: commentary }
+        });
+      });
+
+      // Plot Twist!
+      document.getElementById('btnShuffleChaos').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        const scores = players.map(p => p.score).sort(() => Math.random() - 0.5);
+        players.forEach((p, idx) => {
+          p.score = scores[idx] + Math.floor(Math.random() * 40);
+        });
+        playSound('fanfare');
+        const commentary = updateCommentary('chaos');
+        renderLeaderboard(true);
+        postToGoogleSheets({
+          action: 'sync_all',
+          players: players,
+          settings: { last_commentary: commentary }
+        });
+      });
+
+      // Nol-kan Skor
+      document.getElementById('btnResetScores').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        players.forEach(p => p.score = 0);
+        rankChanges = {};
+        playSound('down');
+        const commentary = "🔄 Semua poin di-reset ke 0! Pertandingan baru dimulai!";
+        document.getElementById('commentaryText').textContent = commentary;
+        renderLeaderboard(true);
+        postToGoogleSheets({
+          action: 'sync_all',
+          players: players,
+          settings: { last_commentary: commentary }
+        });
+      });
+
+      // Data Contoh
+      document.getElementById('btnRestoreDemo').addEventListener('click', () => {
+        if (!requireAdmin()) return;
+        players = JSON.parse(JSON.stringify(INITIAL_PLAYERS));
+        previousRanks = {};
+        rankChanges = {};
+        lastTop1Id = null;
+        playSound('pop');
+        const commentary = "✨ Arena diisi ulang dengan 9 peserta contoh & disimpan ke Sheets!";
+        document.getElementById('commentaryText').textContent = commentary;
+        renderLeaderboard(true);
+        postToGoogleSheets({
+          action: 'sync_all',
+          players: players,
+          settings: {
+            admin_pin: adminPin,
+            board_title: boardTitle,
+            last_commentary: commentary
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
